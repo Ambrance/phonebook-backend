@@ -35,7 +35,7 @@ let persons = [
   },
 ];
 
-app.get('/api/persons', (request, response) => {
+app.get('/persons', (request, response) => {
   response.json(persons);
 });
 
@@ -48,13 +48,13 @@ app.get('/info', (request, response) => {
   );
 });
 
-app.get('/api/persons/:id', (request, response) => {
+app.get('/persons/:id', (request, response) => {
   const id = Number(request.params.id);
   const person = persons.find((person) => person.id === id);
   response.json(person);
 });
 
-app.delete('/api/persons/:id', (request, response) => {
+app.delete('/persons/:id', (request, response) => {
   const id = Number(request.params.id);
   persons = persons.filter((person) => person.id !== id);
 
@@ -63,7 +63,7 @@ app.delete('/api/persons/:id', (request, response) => {
 
 const generateId = () => Math.floor(Math.random() * 1000000);
 
-app.post('/api/persons', (request, response) => {
+app.post('/persons', (request, response) => {
   const body = request.body;
 
   if (!body.name) {
