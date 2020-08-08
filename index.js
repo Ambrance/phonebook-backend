@@ -1,6 +1,9 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
+require('dotenv').config();
+
+const Person = require('./models/persons');
 
 app.use(cors());
 app.use(express.json());
@@ -12,46 +15,31 @@ morgan.token('data', (request) => JSON.stringify(request.body));
 app.use(
   morgan(':method :url :status :res[content-length] - :response-time ms :data'),
 );
-let persons = [
-  {
-    name: 'Arto Hellas',
-    number: '74520-4523-452',
-    id: 1,
-  },
-  {
-    name: 'Ada Lovelace',
-    number: '39-44-5323523',
-    id: 2,
-  },
-  {
-    name: 'Dan Abramov',
-    number: '12-43-234345',
-    id: 3,
-  },
-  {
-    name: 'Mary Poppendieck',
-    number: '39-23-6423122',
-    id: 4,
-  },
-];
 
 app.get('/persons', (request, response) => {
-  response.json(persons);
+  Person.find({}).then((result) => {
+    response.json(result);
+    mongoose.connection.close();
+  });
 });
 
 app.get('/info', (request, response) => {
-  response.send(
-    `<div>
-  <p>Phonebook has info for ${persons.length} persons.</p>
-  <p>${new Date()}</p>
-    </div>`,
-  );
+  Person.find({}).then((result) => {
+    response.send(
+      `<div>
+    <p>Phonebook has info for ${result.length} persons.</p>
+    <p>${new Date()}</p>
+      </div>`,
+    );
+    mongoose.connection.close();
+  });
 });
 
 app.get('/persons/:id', (request, response) => {
   const id = Number(request.params.id);
-  const person = persons.find((person) => person.id === id);
-  response.json(person);
+  Person.findById(id).then((p) => {
+    response.json(p);
+  });
 });
 
 app.delete('/persons/:id', (request, response) => {
@@ -60,8 +48,6 @@ app.delete('/persons/:id', (request, response) => {
 
   response.status(204).end();
 });
-
-const generateId = () => Math.floor(Math.random() * 1000000);
 
 app.post('/persons', (request, response) => {
   const body = request.body;
@@ -78,24 +64,24 @@ app.post('/persons', (request, response) => {
     });
   }
 
-  if (persons.some((person) => person.name === body.name)) {
+  /*if (persons.some((person) => person.name === body.name)) {
     return response.status(400).json({
       error: `${body.name} already exist in the phonebook`,
     });
-  }
+  }*/
 
-  const person = {
+  const person = new Person({
     name: body.name,
     number: body.number,
-    id: generateId(),
-  };
+  });
 
-  persons = persons.concat(person);
-
-  response.json(person);
+  person.save().then((result) => {
+    response.json(result);
+    mongoose.connection.close();
+  });
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
