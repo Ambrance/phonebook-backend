@@ -37,11 +37,17 @@ app.get('/info', (request, response) => {
     .catch((error) => next(error));
 });
 
-app.get('/persons/:id', (request, response) => {
-  const id = Number(request.params.id);
-  Person.findById(id).then((p) => {
-    response.json(p);
-  });
+app.get('/persons/:id', (request, response, next) => {
+  const id = request.params.id;
+  Person.findById(id)
+    .then((p) => {
+      if (p) {
+        response.json(p.toJSON());
+      } else {
+        response.status(404).end();
+      }
+    })
+    .catch((error) => next(error));
 });
 
 app.delete('/persons/:id', (request, response, next) => {
@@ -61,7 +67,9 @@ app.put('/persons/:id', (request, response, next) => {
   };
 
   Person.findByIdAndUpdate(request.params.id, person, {new: true})
-    .then((updatedPerson) => updatedPerson.json())
+    .then((updatedPerson) => {
+      response.json(updatedPerson.toJSON());
+    })
 
     .catch((error) => next(error));
 });
@@ -94,7 +102,7 @@ app.post('/persons', (request, response) => {
     .catch((error) => next(error));
 });
 
-/*const unknownEndpoint = (request, result) => {
+const unknownEndpoint = (request, result) => {
   res.status(404).send({error: 'Unable to retrieve data.'});
 };
 
@@ -110,7 +118,7 @@ const errorHandler = (error, request, result, next) => {
   next(error);
 };
 
-app.use(errorHandler);*/
+app.use(errorHandler);
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
