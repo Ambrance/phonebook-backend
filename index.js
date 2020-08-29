@@ -66,7 +66,11 @@ app.put('/persons/:id', (request, response, next) => {
     number: body.number,
   };
 
-  Person.findByIdAndUpdate(request.params.id, person, {new: true})
+  Person.findByIdAndUpdate(request.params.id, person, {
+    new: true,
+    runValidators: true,
+    context: 'query',
+  })
     .then((updatedPerson) => {
       response.json(updatedPerson.toJSON());
     })
@@ -74,18 +78,11 @@ app.put('/persons/:id', (request, response, next) => {
     .catch((error) => next(error));
 });
 
-app.post('/persons', (request, response) => {
+app.post('/persons', (request, response, next) => {
   const body = request.body;
-
-  if (!body.name) {
+  if (!body.name || !body.number) {
     return response.status(400).json({
-      error: 'Name missing',
-    });
-  }
-
-  if (!body.number) {
-    return response.status(400).json({
-      error: 'Number missing',
+      error: 'Content missing!',
     });
   }
 
@@ -96,24 +93,17 @@ app.post('/persons', (request, response) => {
 
   person
     .save()
-    .then((result) => {
-      response.json(result);
-    })
+    .then((result) => result.toJSON())
+    .then((formatedResult) => response.json(formatedResult))
     .catch((error) => next(error));
 });
-
-const unknownEndpoint = (request, result) => {
-  res.status(404).send({error: 'Unable to retrieve data.'});
-};
-
-app.use(unknownEndpoint);
 
 const errorHandler = (error, request, result, next) => {
   console.error(error.message);
   if (error.name === 'CastError') {
-    return res.status(400).send({error: 'Malformed id.'});
+    return result.status(400).send({error: 'Malformed id.'});
   } else if (error.name === 'ValidationError') {
-    return res.status(400).json({error: error.message});
+    return result.status(400).json({error: error.message});
   }
   next(error);
 };
